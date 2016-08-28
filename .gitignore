@@ -1,0 +1,5 @@
+*.pkl
+*.pyc
+log_chat/
+log_groupchat/
+files_download/
