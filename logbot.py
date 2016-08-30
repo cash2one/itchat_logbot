@@ -1,10 +1,11 @@
-import itchat, time, os, sys, random
-
-def script_path():
-    path = os.path.realpath(sys.argv[0])
-    if os.path.isfile(path):
-        path = os.path.dirname(path)
-    return os.path.abspath(path)
+#!/usr/bin/env python2
+# -*- coding: UTF-8 -*-
+# File: logbot.py
+# Author: Sibo Jia <sibojia.cs@gmail.com>
+import itchat, time, os, sys, random, re
+from common import *
+from turing_api import TuringAPI
+import config as CONFIG
 
 class RandomText(object):
     """get a random line from file"""
@@ -16,13 +17,14 @@ class RandomText(object):
         else:
             self.lines = []
 
-    def get(self):
+    def get(self, **args):
         if len(self.lines) > 0:
             return random.choice(self.lines).decode('utf8')
         else:
             return ''
 
 chat_text_gen = RandomText('random_text.txt')
+turing_api = TuringAPI(key_path = os.path.join(script_path(), 'turing_api.key'))
 
 class Utils(object):
     '''utils for itchat'''
@@ -102,7 +104,10 @@ class Utils(object):
 @itchat.msg_register(['Text'])
 def text_reply(msg):
     Utils.get_logger(msg['FromUserName']).log(msg)
-    send_msg = chat_text_gen.get()
+    if CONFIG.reply_engine == 'random':
+        send_msg = chat_text_gen.get()
+    elif CONFIG.reply_engine == 'turing':
+        send_msg = turing_api.get(query = msg['Text'], user_hash = msg['FromUserName'][:20])
     Utils.get_logger(msg['FromUserName']).log_raw(send_msg)
     itchat.send(send_msg, msg['FromUserName'])
 
@@ -137,7 +142,11 @@ def log_share_group(msg):
 def text_reply_group(msg):
     Utils.get_logger(msg['FromUserName'], isGroupChat = True).log(msg, isGroupChat = True)
     if msg['isAt']:
-        send_msg = chat_text_gen.get()
+        if CONFIG.reply_engine == 'random':
+            send_msg = chat_text_gen.get()
+        elif CONFIG.reply_engine == 'turing':
+            rep = re.sub(ur'@.*?\u2005', '', msg['Text'])
+            send_msg = turing_api.get(query = rep, user_hash = msg['FromUserName'][:20])
         Utils.get_logger(msg['FromUserName'], isGroupChat = True).log_raw(send_msg)
         itchat.send(u'@%s\u2005 %s'%(msg['ActualNickName'], send_msg), msg['FromUserName'])
 
