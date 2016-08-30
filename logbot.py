@@ -73,10 +73,13 @@ class Utils(object):
 
     @classmethod
     def get_username(cls, fromusername):
-        tryname = itchat.get_batch_contract(fromusername)['NickName']
-        if len(tryname) > 0:
-            return tryname
-        else:
+        try:
+            tryname = itchat.get_batch_contract(fromusername)['NickName']
+            if len(tryname) > 0:
+                return tryname
+            else:
+                return 'Nobody'
+        except:
             return 'Nobody'
         # def _build_dict(update=False):
         #     d = itchat.get_contract(update)
@@ -140,3 +143,4 @@ def text_reply_group(msg):
 
 itchat.auto_login(hotReload=True)
 itchat.run()
+itchat.dump_login_status()
